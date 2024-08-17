@@ -12,7 +12,7 @@ import {
   updateContactSchema,
 } from "../schemas/contactsSchemas.js";
 
-export const getAllContacts = async (req, res, next) => {
+export const getAllContacts = async (_, res, next) => {
   try {
     const contacts = await listContacts();
     res.status(200).json(contacts);
@@ -38,10 +38,11 @@ export const deleteContact = async (req, res, next) => {
   try {
     const { id } = req.params;
     const contact = await removeContact(id);
+    console.log(contact);
     if (!contact) {
       throw HttpError(404, `Contact with id=${id} not found`);
     }
-    res.status(200).json(contact);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
@@ -70,6 +71,7 @@ export const updateContact = async (req, res, next) => {
       throw HttpError(400, error.message);
     }
     const { id } = req.params;
+    console.log(id);
     const contact = await updateContactService(id, req.body);
     if (!contact) {
       throw HttpError(404, `Contact with id=${id} not found`);

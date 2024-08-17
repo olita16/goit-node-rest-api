@@ -1,8 +1,15 @@
 import { Sequelize } from "sequelize";
 
-const {DATABASE_NAME, DATABASE_DIALECT, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST,DATABASE_PORT} = process.env; 
+const {
+  DATABASE_NAME,
+  DATABASE_DIALECT,
+  DATABASE_USER,
+  DATABASE_PASSWORD,
+  DATABASE_HOST,
+  DATABASE_PORT,
+} = process.env;
 
-export const databaseConfig  = {
+export const databaseConfig = {
   dialect: DATABASE_DIALECT,
   username: DATABASE_USER,
   database: DATABASE_NAME,
@@ -11,9 +18,9 @@ export const databaseConfig  = {
   port: DATABASE_PORT,
   dialectOptions: {
     ssl: true,
-  }
-}
+  },
+};
 
 const sequelize = new Sequelize(databaseConfig);
 
-export default sequelize; 
+export default sequelize;
