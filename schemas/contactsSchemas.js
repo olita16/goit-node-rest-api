@@ -10,7 +10,8 @@ export const createContactSchema = Joi.object({
   phone: Joi.string()
     .required()
     .messages({ "any.required": "phone has be exist" }),
-  favorite: Joi.boolean(),
+  favorite: Joi.boolean()
+    .required()
 });
 
 export const updateContactSchema = Joi.object({

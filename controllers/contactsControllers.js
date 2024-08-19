@@ -1,3 +1,4 @@
+
 import {
   listContacts,
   getContactById,
@@ -77,6 +78,29 @@ export const updateContact = async (req, res, next) => {
       throw HttpError(404, `Contact with id=${id} not found`);
     }
     res.json(contact);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateStatusContact = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+
+    const { error } = updateContactSchema.validate({ favorite });
+    if (error) {
+      throw HttpError(400, "Invalid data format");
+    }
+
+    const contact = await getContactById(contactId);
+    if (!contact) {
+      throw HttpError(404, `Contact with id=${contactId} not found`);
+    }
+
+    const updatedContact = await updateContactService(contactId, { favorite });
+
+    res.status(200).json(updatedContact);
   } catch (error) {
     next(error);
   }
