@@ -5,7 +5,7 @@ import {
   deleteContact,
   createContact,
   updateContact,
-  updateStatusContact
+  updateContactFavorite
 } from "../controllers/contactsControllers.js";
 
 const contactsRouter = express.Router();
