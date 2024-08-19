@@ -10,13 +10,14 @@ export const createContactSchema = Joi.object({
   phone: Joi.string()
     .required()
     .messages({ "any.required": "phone has be exist" }),
-  favorite: Joi.boolean()
-    .required()
 });
 
 export const updateContactSchema = Joi.object({
   name: Joi.string(),
   email: Joi.string(),
   phone: Joi.string(),
-  favorite: Joi.boolean(),
+});
+
+export const updateFavoriteSchema = Joi.object({
+  favorite: Joi.boolean().required(),
 });

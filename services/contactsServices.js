@@ -30,3 +30,7 @@ export async function updateContactService(id, contactData) {
     returning: true,
   });
 }
+
+export const updateStatusContact = async (id, updateData) => {
+  return await updateContact(id, updateData);
+};
