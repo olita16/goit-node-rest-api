@@ -3,6 +3,7 @@ import {
   getContactById,
   removeContact,
   addContact,
+  updateContactService,
   updateStatusContact,
 } from "../services/contactsServices.js";
 
@@ -10,7 +11,7 @@ import HttpError from "../helpers/HttpError.js";
 import {
   createContactSchema,
   updateContactSchema,
-  updateFavoriteSchema
+  updateFavoriteSchema,
 } from "../schemas/contactsSchemas.js";
 
 export const getAllContacts = async (_, res, next) => {
@@ -72,7 +73,6 @@ export const updateContact = async (req, res, next) => {
       throw HttpError(400, error.message);
     }
     const { id } = req.params;
-    console.log(id);
     const contact = await updateContactService(id, req.body);
     if (!contact) {
       throw HttpError(404, `Contact with id=${id} not found`);
@@ -91,12 +91,10 @@ export const updateContactFavorite = async (req, res, next) => {
     const { id } = req.params;
     const { favorite } = req.body;
 
-    const updatedContact = await updateStatusContact(id, {
-      favorite,
-    });
+    const updatedContact = await updateStatusContact(id, { favorite });
 
     if (!updatedContact) {
-      throw HttpError(404, "Not found");
+      throw HttpError(404, `Contact with id=${id} not found`);
     }
 
     res.status(200).json(updatedContact);
