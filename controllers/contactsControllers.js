@@ -1,16 +1,17 @@
-
 import {
   listContacts,
   getContactById,
   removeContact,
   addContact,
   updateContactService,
+  updateStatusContact,
 } from "../services/contactsServices.js";
 
 import HttpError from "../helpers/HttpError.js";
 import {
   createContactSchema,
   updateContactSchema,
+  updateFavoriteSchema,
 } from "../schemas/contactsSchemas.js";
 
 export const getAllContacts = async (_, res, next) => {
@@ -72,7 +73,6 @@ export const updateContact = async (req, res, next) => {
       throw HttpError(400, error.message);
     }
     const { id } = req.params;
-    console.log(id);
     const contact = await updateContactService(id, req.body);
     if (!contact) {
       throw HttpError(404, `Contact with id=${id} not found`);
@@ -83,22 +83,19 @@ export const updateContact = async (req, res, next) => {
   }
 };
 
-export const updateStatusContact = async (req, res, next) => {
+export const updateContactFavorite = async (req, res, next) => {
   try {
-    const { contactId } = req.params;
+    const { error } = updateFavoriteSchema.validate(req.body);
+    if (error) throw HttpError(400, error.message);
+
+    const { id } = req.params;
     const { favorite } = req.body;
 
-    const { error } = updateContactSchema.validate({ favorite });
-    if (error) {
-      throw HttpError(400, "Invalid data format");
-    }
+    const updatedContact = await updateStatusContact(id, { favorite });
 
-    const contact = await getContactById(contactId);
-    if (!contact) {
-      throw HttpError(404, `Contact with id=${contactId} not found`);
+    if (!updatedContact) {
+      throw HttpError(404, `Contact with id=${id} not found`);
     }
-
-    const updatedContact = await updateContactService(contactId, { favorite });
 
     res.status(200).json(updatedContact);
   } catch (error) {

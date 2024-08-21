@@ -30,3 +30,19 @@ export async function updateContactService(id, contactData) {
     returning: true,
   });
 }
+
+export const updateContact = async (id, updateData) => {
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("Update data cannot be empty");
+  }
+
+  const contact = await Contact.findByPk(id);
+  
+  if (!contact) return null;
+  return await contact.update(updateData);
+};
+
+
+export const updateStatusContact = async (id, updateData) => {
+  return await updateContact(id, updateData);
+};
