@@ -1,4 +1,4 @@
-import HttpError from "./HttpError.js";
+import HttpError from "../helpers/HttpError.js";
 import { ValidationError } from "sequelize";
 
 const validateBody = (schema) => {

@@ -18,8 +18,13 @@ const Contact = sequelize.define("contacts", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  owner:{
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  }
 });
 
 // Contact.sync({ force: true });
 
 export default Contact;
+
