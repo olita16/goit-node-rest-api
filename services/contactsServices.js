@@ -1,28 +1,39 @@
 import Contact from "../db/models/Contact.js";
 
-export function listContacts() {
-  return Contact.findAll();
+export function listContacts( userId) {
+  return Contact.findAll({
+    where: { owner: userId }
+    });
 }
 
-export function getContactById(contactId) {
-  return Contact.findByPk(contactId);
-}
-
-export async function removeContact(id) {
-  return Contact.destroy({
+export function getContactById(contactId, userId) {
+  return Contact.findOne({
     where: {
-      id,
-    },
+      id: contactId,
+      owner: userId
+    }
   });
 }
 
-export function addContact({ name, email, phone }) {
-  return Contact.create({ name, email, phone });
+export async function removeContact(id, userId) {
+  const contact = await getContactById(id, userId);
+  if (contact) {
+    return Contact.destroy({
+      where: {
+        id,
+        owner: userId
+      }
+    });
+  }
+  return null;
 }
 
-export async function updateContactService(id, contactData) {
-  console.log("text: ", id);
-  const contact = await getContactById(id);
+export function addContact({ name, email, phone, owner }) {
+  return Contact.create({ name, email, phone, owner });
+}
+
+export async function updateContactService(id, contactData, userId) {
+  const contact = await getContactById(id, userId);
   if (!contact) {
     return null;
   }
@@ -31,18 +42,31 @@ export async function updateContactService(id, contactData) {
   });
 }
 
-export const updateContact = async (id, updateData) => {
+
+export const updateContact = async (id, updateData, userId) => {
   if (Object.keys(updateData).length === 0) {
     throw new Error("Update data cannot be empty");
   }
 
-  const contact = await Contact.findByPk(id);
-  
-  if (!contact) return null;
+  const contact = await Contact.findOne({
+    where: {
+      id,
+      owner: userId 
+    }
+  });
+
+  if (!contact) {
+    return null;
+  }
+
   return await contact.update(updateData);
 };
 
 
-export const updateStatusContact = async (id, updateData) => {
-  return await updateContact(id, updateData);
+export const updateStatusContact = async (id, updateData, userId) => {
+  const contact = await getContactById(id, userId);
+  if (!contact) {
+    return null;
+  }
+  return await contact.update(updateData);
 };
