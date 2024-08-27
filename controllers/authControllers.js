@@ -3,17 +3,53 @@ import * as authServices from "../services/authServices.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import User from "../db/models/User.js";
 import bcrypt from "bcryptjs";
+import gravatar from "gravatar";
+import path from "path";
+import * as fs from "node:fs/promises";
 
 import jwt from "jsonwebtoken";
 const { JWT_SECRET } = process.env;
 
+const avatarPath = path.resolve("public", "avatars");
+
+const updateAvatar = async (req, res) => {
+  const { id } = req.user;
+  const { path: oldPath, filename } = req.file;
+  const newPath = path.join(avatarPath, filename);
+  const avatarURL = `/avatars/${filename}`;
+  await fs.rename(oldPath, newPath);
+  const updatedUser = await authServices.updateUser(id, { avatarURL });
+  res.json({
+    avatarURL: updatedUser.avatarURL,
+  });
+};
+
 export const register = async (req, res, next) => {
   try {
-    const newUser = await authServices.signup(req.body);
+    const { email, password, subscription } = req.body;
+
+    if (!email || !password) {
+      return next(HttpError(400, "Email and password are required"));
+    }
+
+    const avatarURL = gravatar.url(
+      email,
+      { s: "200", r: "pg", d: "retro" },
+      true
+    );
+
+    const newUser = await authServices.signup({
+      email,
+      password,
+      subscription,
+      avatarURL,
+    });
+
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -89,4 +125,5 @@ export default {
   login: ctrlWrapper(login),
   logout: ctrlWrapper(logout),
   getCurrentUser: ctrlWrapper(getCurrentUser),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
