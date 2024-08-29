@@ -6,9 +6,12 @@ import bcrypt from "bcryptjs";
 import gravatar from "gravatar";
 import path from "path";
 import * as fs from "node:fs/promises";
+import { nanoid } from "nanoid";
+import nodemailer from "nodemailer";
 
 import jwt from "jsonwebtoken";
-const { JWT_SECRET } = process.env;
+
+const { JWT_SECRET, UKR_NET_PASSWORD, UKR_NET_FROM } = process.env;
 
 const avatarPath = path.resolve("public", "avatars");
 
@@ -31,31 +34,56 @@ const updateAvatar = async (req, res, next) => {
       avatarURL: updatedUser.avatarURL,
     });
   } catch (error) {
-
     next(error);
   }
 };
 
+const FROM_EMAIL = "olena.trzewik@ukr.net";
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.ukr.net",
+  port: 465,
+  secure: true,
+  auth: {
+    user: UKR_NET_FROM,
+    pass: UKR_NET_PASSWORD,
+  },
+});
 
 export const register = async (req, res, next) => {
   try {
-    const { email, password, subscription } = req.body;
+    const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(HttpError(400, "Email and password are required"));
+      throw HttpError(
+        400,
+        "Validation error: email and password are required."
+      );
     }
 
-    const avatarURL = gravatar.url(
-      email,
-      { s: "200", r: "pg", d: "retro" },
-      true
-    );
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      throw HttpError(409, "Conflict: Email is already in use.");
+    }
 
-    const newUser = await authServices.signup({
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const avatarURL = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
+    const verificationToken = nanoid();
+
+    const newUser = await User.create({
       email,
-      password,
-      subscription,
+      password: hashedPassword,
       avatarURL,
+      verificationToken,
+    });
+
+    const verificationLink = `http://localhost:3000/auth/verify/${verificationToken}`;
+
+    await transporter.sendMail({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Verify your email",
+      html: `<a href="${verificationLink}">Click here to verify your email</a>`,
     });
 
     res.status(201).json({
@@ -66,9 +94,59 @@ export const register = async (req, res, next) => {
       },
     });
   } catch (error) {
-    if (error.message === "Email already in use") {
-      return next(HttpError(409, "Email already in use"));
+    next(error);
+  }
+};
+
+export const verifyUser = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOne({ where: { verificationToken } });
+
+    if (!user) {
+      throw HttpError(404, "User not found");
     }
+
+    user.verify = true;
+    user.verificationToken = null;
+    await user.save();
+
+    res.status(200).json({ message: "Verification successful" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendVerificationEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw HttpError(400, "Missing required field email");
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+
+    if (user.verify) {
+      throw HttpError(400, "Verification has already been passed");
+    }
+
+    const verificationLink = `http://localhost:3000/auth/verify/${user.verificationToken}`;
+
+    await transporter.sendMail({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Email Verification",
+      html: `<a href="${verificationLink}">Click here to verify your email</a>`,
+    });
+
+    res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
     next(error);
   }
 };
@@ -135,6 +213,8 @@ const getCurrentUser = async (req, res, next) => {
 
 export default {
   register: ctrlWrapper(register),
+  verifyUser: ctrlWrapper(verifyUser),
+  resendVerificationEmail: ctrlWrapper(resendVerificationEmail),
   login: ctrlWrapper(login),
   logout: ctrlWrapper(logout),
   getCurrentUser: ctrlWrapper(getCurrentUser),
