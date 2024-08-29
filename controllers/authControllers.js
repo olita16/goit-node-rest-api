@@ -12,17 +12,30 @@ const { JWT_SECRET } = process.env;
 
 const avatarPath = path.resolve("public", "avatars");
 
-const updateAvatar = async (req, res) => {
-  const { id } = req.user;
-  const { path: oldPath, filename } = req.file;
-  const newPath = path.join(avatarPath, filename);
-  const avatarURL = `/avatars/${filename}`;
-  await fs.rename(oldPath, newPath);
-  const updatedUser = await authServices.updateUser(id, { avatarURL });
-  res.json({
-    avatarURL: updatedUser.avatarURL,
-  });
+const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw HttpError(400, "No file uploaded");
+    }
+
+    const { id } = req.user;
+    const { path: oldPath, filename } = req.file;
+    const newPath = path.join(avatarPath, filename);
+    const avatarURL = `/avatars/${filename}`;
+
+    await fs.rename(oldPath, newPath);
+
+    const updatedUser = await authServices.updateUser(id, { avatarURL });
+
+    res.json({
+      avatarURL: updatedUser.avatarURL,
+    });
+  } catch (error) {
+
+    next(error);
+  }
 };
+
 
 export const register = async (req, res, next) => {
   try {
