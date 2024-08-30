@@ -3,6 +3,12 @@ import authControllers from "../controllers/authControllers.js";
 import authenticate from "../middlewares/authenticate.js";
 
 import upload from "../middlewares/upload.js";
+import validateBody from "../decorators/validateBody.js";
+
+import {authEmailSchema} from "../schemas/authSchemas.js";
+
+const verifyEmailMiddleware = validateBody(authEmailSchema);
+
 
 const authRouter = express.Router();
 
@@ -16,7 +22,8 @@ authRouter.patch(
   upload.single("avatar"),
   authControllers.updateAvatar
 );
-authRouter.get("/verify/:verificationToken", authControllers.verifyUser);
-authRouter.post("/verify", authControllers.resendVerificationEmail);
+authRouter.get("/verify/:verificationToken", authControllers.verify);
+authRouter.post("/verify", verifyEmailMiddleware, authControllers.resendVerify);
 
 export default authRouter;
+
